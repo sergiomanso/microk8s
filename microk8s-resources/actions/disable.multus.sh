@@ -11,7 +11,7 @@ then
   echo "Disabling Multus"
   echo "Checking if multus daemonset is running"
   DS_CHECK=$(${KUBECTL} get pods -n kube-system --selector=app=multus -o name)
-  if [ ${DS_CHECK} ]; then
+  if [ ! -z "${DS_CHECK}" ]; then
     echo "Found multus deamonset, removing it and cleaning up OS files"
     cat "${SNAP}/actions/multus.yaml" | ${SNAP}/bin/sed "s#{{SNAP_DATA}}#${SNAP_DATA}#g" | ${KUBECTL} delete -f - 
     run_with_sudo rm -f "${SNAP_DATA}/args/cni-network/00-multus.conf"
@@ -19,7 +19,7 @@ then
     run_with_sudo rm -f "${SNAP_DATA}/opt/cni/bin/multus"
 
     echo -n "Waiting for multus daemonset to terminate."
-    while [ ${DS_CHECK} ]; do
+    while [ ! -z "${DS_CHECK}" ]; do
       sleep 3
       DS_CHECK=$(${KUBECTL} get pods -n kube-system --selector=app=multus -o name)
       echo -n "."
@@ -29,7 +29,7 @@ then
     echo "Initiating removal on all other nodes."
     nodes_addon multus disable
   else
-    echo "Daemonst not found so we are likely a node, cleaning up OS files"
+    echo "Daemonset not found so we are likely a node, cleaning up OS files"
     run_with_sudo rm -f "${SNAP_DATA}/args/cni-network/00-multus.conf"
     run_with_sudo rm -rf "${SNAP_DATA}/args/cni-network/multus.d"
     run_with_sudo rm -f "${SNAP_DATA}/opt/cni/bin/multus"
